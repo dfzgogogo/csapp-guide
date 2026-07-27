@@ -20,7 +20,7 @@
 | 2 | 3.4 | 寄存器、操作数指示符、`mov` 族指令 | 寄存器简图、操作数类型 |
 | 3 | 3.5 | 算术和逻辑操作、移位、`leaq` | 常见指令表；区分 `leaq` 与普通 mov |
 
-**推荐练习**：每天选 3-5 个简单 C 函数，用 `gcc -O0 -S -masm=intel` 编译，对比 C 与汇编。
+**推荐练习**：每天选 3-5 个简单 C 函数，�� `gcc -O0 -S -masm=intel` 编译，对比 C 与汇编。
 
 ### 阶段二：控制流（第 4-6 天）
 
@@ -115,6 +115,33 @@ mul:
 2. `%edi` 和 `%esi` 分别是第 1、2 个 int 参数的寄存器。
 3. `imull -8(%rbp), %eax` 表示从栈中读取 `y`，与 `%eax` 中的 `x` 相乘，结果留到 `%eax`。
 4. `%eax` 作为 32 位返回值寄存器。
+
+### Day 2（3.4）：访问信息
+
+**关键概念**：
+
+- 通用寄存器 16 个，重点关注 `%rax / %rbx / %rcx / %rdx / %rsi / %rdi / %rbp / %rsp / %r8-%r15`。
+- 操作数类型：立即数（如 `$42`）、寄存器（如 `%rax`）、内存引用（如 `8(%rax)`）。
+- `()` 表示内存访问：`%rax` 是寄存器值，`(%rax)` 是内存值。
+- `movS` 中 S 表示大小：`b/w/l/q`。
+- `mov` 的两个操作数不能同时是内存；`movl` 会自动清零高 32 位。
+- `leaq` 只做地址计算，不访问内存，常用来实现 `x + y * k`。
+
+**推荐 GCC 编译命令（精简汇编输出）**：
+
+```bash
+gcc -O0 -S -fno-asynchronous-unwind-tables -fcf-protection=none test.c
+```
+
+`-fno-asynchronous-unwind-tables`：去掉 `.cfi_*` 等异常处理相关伪指令，减少干扰。
+
+`-fcf-protection=none`：关闭控制流保护相关指令（如 `endbr64`），输出更干净。
+
+**今日练习**：
+
+1. `long scale(long x, long y, long z) { return x + 4*y + 8*z; }`：观察 `leaq` 的使用。
+2. `char` 返回 `int`：观察 `movsbl` 与 `movzbl` 的区别。
+3. 指针交换：观察 `*xp` 在汇编中的内存引用形式。
 
 ## 高频指令速查
 
