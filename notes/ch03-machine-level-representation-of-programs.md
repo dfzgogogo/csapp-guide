@@ -20,7 +20,7 @@
 | 2 | 3.4 | 寄存器、操作数指示符、`mov` 族指令 | 寄存器简图、操作数类型 |
 | 3 | 3.5 | 算术和逻辑操作、移位、`leaq` | 常见指令表；区分 `leaq` 与普通 mov |
 
-**推荐练习**：每天选 3-5 个简单 C 函数，�� `gcc -O0 -S -masm=intel` 编译，对比 C 与汇编。
+**推荐练习**：每天选 3-5 个简单 C 函数，用 `gcc -O0 -S -masm=intel` 编译，对比 C 与汇编。
 
 ### 阶段二：控制流（第 4-6 天）
 
@@ -126,6 +126,8 @@ mul:
 - `movS` 中 S 表示大小：`b/w/l/q`。
 - `mov` 的两个操作数不能同时是内存；`movl` 会自动清零高 32 位。
 - `leaq` 只做地址计算，不访问内存，常用来实现 `x + y * k`。
+- `_caller-saved_`：调用者保存的寄存器，如 `%rax / %rcx / %rdx / %rsi / %rdi / %r8-%r11`。
+- `_callee-saved_`：被调用者保存的寄存器，如 `%rbx / %rbp / %r12-%r15`。
 
 **推荐 GCC 编译命令（精简汇编输出）**：
 
@@ -137,11 +139,63 @@ gcc -O0 -S -fno-asynchronous-unwind-tables -fcf-protection=none test.c
 
 `-fcf-protection=none`：关闭控制流保护相关指令（如 `endbr64`），输出更干净。
 
-**今日练习**：
+**今日练习与解析**：
 
-1. `long scale(long x, long y, long z) { return x + 4*y + 8*z; }`：观察 `leaq` 的使用。
-2. `char` 返回 `int`：观察 `movsbl` 与 `movzbl` 的区别。
-3. 指针交换：观察 `*xp` 在汇编中的内存引用形式。
+#### 练习 1：`scale` 函数
+
+```c
+long scale(long x, long y, long z) {
+    return x + 4 * y + 8 * z;
+}
+```
+
+- 参数寄存器：`%rdi = x`，`%rsi = y`，`%rdx = z`。
+- 使用 `leaq 0(,%rsi,4), ...` 实现 `4 * y`，用 `leaq (%rdx,%rax,8), ...` 实现累加。
+- 返回值通过 `%rax` 返回。
+- 关键点：`leaq` 不访问内存，只做地址/算术计算。
+
+#### 练习 2：符号扩展
+
+```c
+int sign_extend(char c) {
+    return c;
+}
+```
+
+- 返回类型是 `int`，参数是 `char`，会发生整型提升。
+- 编译器使用 `movsbl`（符号扩展），因为 `char` 默认有符号。
+- 若参数改为 `unsigned char`，则会使用 `movzbl`（零扩展）。
+
+#### 练习 3：指针交换
+
+```c
+long* swap(long *xp, long *yp) {
+    long t0 = *xp;
+    long t1 = *yp;
+    *xp = t1;
+    *yp = t0;
+    return xp;
+}
+```
+
+- `*xp` 在汇编中表现为 `(%rdi)`：先 `movq (%rdi), %rax` 读取。
+- 指针参数 `xp` 在第 1 个参数寄存器 `%rdi`。
+- 返回的 `xp` 也放在 `%rax` 中。
+- `mov` 不能同时以两个内存操作数为源和目标，因此读写都通过寄存器中转。
+
+### 寄存器命名规律
+
+| 后缀 | 含义 | 位数 |
+|---|---|---|
+| `R`（如 `%rax`） | Register，64 位扩展 | 64 |
+| `E`（如 `%eax`） | Extended，32 位扩展 | 32 |
+| 无后缀（如 `%ax`） | 基础 16 位名字 | 16 |
+| `L`（如 `%al`） | Low byte，低字节 | 8 |
+| `H`（如 `%ah`） | High byte，高字节 | 8 |
+
+`%rdi / %rsi / %rbp / %rsp` 的 8 位版本为 `%dil / %sil / %bpl / %spl`：这些寄存器在 32 位 x86 中没有 8 位版本，x86-64 新定义了低字节版本，后缀用 `l`（low）。
+
+新寄存器 `%r8-%r15` 没有历史包袱，8 位版本用 `b`：`%r8b / %r9b / ... / %r15b`。
 
 ## 高频指令速查
 
@@ -153,12 +207,12 @@ gcc -O0 -S -fno-asynchronous-unwind-tables -fcf-protection=none test.c
 | `idivq` | 有符号除法 |
 | `cmp S, D` | 比较，等价于 `D - S`，仅设置条件码 |
 | `test S, D` | 测试，等价于 `D & S`，仅设置条件码 |
-| `sete/setne/setg/setl ...` | 根据条件码设置字节 |
+| `sete/setne/setg/setl ...` | 根据条件���设置字节 |
 | `jmp/je/jne/jg/jl ...` | 无条件或有条件跳转 |
 | `call` / `ret` | 函数调用 / 返回 |
 | `push` / `pop` | 栈操作 |
 
-## 寄存器速记
+## 寄存��速记
 
 | 用途 | 64 位 | 32 位 | 16 位 | 8 位 |
 |---|---|---|---|---|
