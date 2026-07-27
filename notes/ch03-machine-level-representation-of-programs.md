@@ -73,6 +73,49 @@ cmp/test ⟹ 设置条件码 ⟹ set/jump/cmov 消费条件码
 
 **Lab 记录要求**：每拆完一个 phase，把输入、关键汇编片段、推理过程写入 `labs/bomblab/README.md`。
 
+## 学习日志
+
+### Day 1（3.1-3.3）：程序编码与数据格式
+
+**实践内容**：
+
+写了一个 `int mul(int x, int y)` 函数，分别用 `-O0` 和 `-O2` 编译查看汇编。
+
+**关键发现**：
+
+- `int` 是 32 位，乘法指令用 `imull`，返回值放在 `%eax`。
+- `-O0` 汇编会建立完整栈帧，把参数先存栈再读回，代码很长但和 C 语句对应清晰。
+- `-O2` 汇编精简，直接 `%edi` → `%eax`，再 `imull %esi, %eax`，最后 `ret`。
+
+**示例代码**：
+
+```c
+int mul(int x, int y) {
+    return x * y;
+}
+```
+
+`-O0` 反汇编关键片段：
+
+```asm
+mul:
+    pushq   %rbp
+    movq    %rsp, %rbp
+    movl    %edi, -4(%rbp)
+    movl    %esi, -8(%rbp)
+    movl    -4(%rbp), %eax
+    imull   -8(%rbp), %eax
+    popq    %rbp
+    ret
+```
+
+**理解**：
+
+1. `pushq / movq %rsp, %rbp` 是建立栈帧的标准开头。
+2. `%edi` 和 `%esi` 分别是第 1、2 个 int 参数的寄存器。
+3. `imull -8(%rbp), %eax` 表示从栈中读取 `y`，与 `%eax` 中的 `x` 相乘，结果留到 `%eax`。
+4. `%eax` 作为 32 位返回值寄存器。
+
 ## 高频指令速查
 
 | 指令 | 作用 |
