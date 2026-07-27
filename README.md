@@ -25,7 +25,7 @@ csapp-guide/
 
 1. 打开 `syllabus.md` 查看整体学习路线。
 2. 根据当前进度，在 `progress.md` 中打卡。
-3. 每学完一章，在 `notes/` 下更���对应章节笔记。
+3. 每学完一章，在 `notes/` 下更新对应章节笔记。
 4. 做 Lab 时，在 `labs/<lab-name>/README.md` 中记录思路与关键解法。
 
 ---
