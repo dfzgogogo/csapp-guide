@@ -207,12 +207,12 @@ long* swap(long *xp, long *yp) {
 | `idivq` | 有符号除法 |
 | `cmp S, D` | 比较，等价于 `D - S`，仅设置条件码 |
 | `test S, D` | 测试，等价于 `D & S`，仅设置条件码 |
-| `sete/setne/setg/setl ...` | 根据条件���设置字节 |
+| `sete/setne/setg/setl ...` | 根据条件码设置字节 |
 | `jmp/je/jne/jg/jl ...` | 无条件或有条件跳转 |
 | `call` / `ret` | 函数调用 / 返回 |
 | `push` / `pop` | 栈操作 |
 
-## 寄存��速记
+## 寄存器速记
 
 | 用途 | 64 位 | 32 位 | 16 位 | 8 位 |
 |---|---|---|---|---|
