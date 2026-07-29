@@ -17,7 +17,7 @@
 | 天数 | 阅读 | 关键内容 | 输出 |
 |---|---|---|---|
 | 1 | 3.1-3.3 | 程序编码、数据格式、`gcc -S` / `objdump -d` | 会编译并查看汇编 |
-| 2 | 3.4 | 寄存器、操作数指示符、`mov` 族指令 | 寄存器简图、操作数类型 |
+| 2 | 3.4 | 寄存器、操作数指示符、`mov` 族指令 | 寄��器简图、操作数类型 |
 | 3 | 3.5 | 算术和逻辑操作、移位、`leaq` | 常见指令表；区分 `leaq` 与普通 mov |
 
 **推荐练习**：每天选 3-5 个简单 C 函数，用 `gcc -O0 -S -masm=intel` 编译，对比 C 与汇编。
@@ -48,7 +48,7 @@ cmp/test ⟹ 设置条件码 ⟹ set/jump/cmov 消费条件码
 
 **关键动作**：用 `gdb` 单步跟踪一次函数调用，观察 `%rsp` 和栈内存变化。
 
-### 阶段四：数据结构与浮点（第 9 天）
+### 阶段四：数据结构与浮点���第 9 天）
 
 阅读 3.8-3.11，理解数组、结构体、联合、指针与浮点。
 
@@ -164,7 +164,7 @@ int sign_extend(char c) {
 
 - 返回类型是 `int`，参数是 `char`，会发生整型提升。
 - 编译器使用 `movsbl`（符号扩展），因为 `char` 默认有符号。
-- 若参数改为 `unsigned char`，则会使用 `movzbl`（零扩展）。
+- 若参数改为 `unsigned char`，���会使用 `movzbl`（零扩展）。
 
 #### 练习 3：指针交换
 
@@ -209,7 +209,7 @@ long* swap(long *xp, long *yp) {
 
 **重点理解**：
 
-- `sub S, D` 的效��是 `D = D - S`，结果存在 `D` 中。
+- `sub S, D` 的效果是 `D = D - S`，结果存在 `D` 中。
 - `imul` 有单操作数（`idiv` 配套）和双操作数（`D *= S`）两种形式。
 - `sal` 与 `shl` 在 x86-64 上是同一指令，左移都补 0。
 - `sar` 算术右移补符号位，用于有符号数；`shr` 逻辑右移补 0，用于无符号数。
@@ -222,6 +222,68 @@ long* swap(long *xp, long *yp) {
 1. `long arith(long x, long y, long z)`：观察 `z * 48`、`xor`、`and` 对应的指令。
 2. `long shift_left4_rightn(long x, long n)`：区分 `sal/shl` 与 `sar/shr`。
 3. `long m12(long x)`：观察 `x * 12` 是用 `leaq` 组合还是 `imulq` 实现。
+
+### Day 4（3.6.1-3.6.3）：条件码、set 与跳转
+
+**核心理解链**：
+
+```
+cmp / test  设置条件码  ⇒  setx / jxx  消费条件码
+```
+
+**条件码**：
+
+| 标志 | 名称 | 含义 |
+|---|---|---|
+| `ZF` | Zero Flag | 结果为 0 |
+| `SF` | Sign Flag | 结果为负 |
+| `CF` | Carry Flag | 无符号溢出 / 借位 |
+| `OF` | Overflow Flag | 有符号溢出 |
+
+**设置条件码的指令**：
+
+- `cmp S, D`：执行 `D - S`，不保存结果，只设置条件码。
+- `test S, D`：执行 `D & S`，不保存结果，只设置条件码。常用于判断 0 或正负。
+
+**set 指令**（结果存在 `%al`，通常需要 `movzbl` 扩展）：
+
+| 指令 | 条件 | 含义 |
+|---|---|---|
+| `sete / setz` | `ZF == 1` | 等于 / 为零 |
+| `setne / setnz` | `ZF == 0` | 不等于 / 非零 |
+| `setg` | `ZF == 0 && SF == OF` | 有符号大于 |
+| `setge` | `SF == OF` | 有符号大于等于 |
+| `setl` | `SF != OF` | 有符号小于 |
+| `setle` | `ZF == 1 \\|\\| SF != OF` | 有符号小于等于 |
+| `seta` | `CF == 0 && ZF == 0` | 无符号高于（above） |
+| `setb` | `CF == 1` | 无符号低于（below） |
+
+**跳转指令**：
+
+- 无条件：`jmp`
+- 有条件：`je / jne / jg / jge / jl / jle / ja / jb / js / jns`
+
+**关键例子**：
+
+```c
+int is_equal(int x, int y) {
+    return x == y;
+}
+```
+
+```asm
+is_equal:
+    cmpl    %esi, %edi      # x - y
+    sete    %al             # 若相等，%al = 1
+    movzbl  %al, %eax       # 零扩展到 32 位返回
+    ret
+```
+
+**Day 4 练习**：
+
+1. `int is_equal(int x, int y)`：观察 `cmp` + `sete` + `movzbl` 的模式。
+2. `int is_negative(int x)`：观察 `test` 或 `cmp $0` 后的 `sets`。
+3. `int max(int x, int y)`：观察条件跳转 `jle` 或 `jg` 的方向。
 
 ## 阶段一必记清单
 
